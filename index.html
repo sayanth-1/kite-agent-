@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kite Agent Checker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f0e8;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      color: #3d3529;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #6b5e4a;
+      margin-bottom: 30px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #a6947a;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #8f8469;
+    }
+
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #f9f7f4;
+      border-radius: 5px;
+      display: none;
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .result h2 {
+      color: #3d3529;
+      margin-top: 0;
+    }
+
+    .info-row {
+      margin: 15px 0;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e0d5c7;
+    }
+
+    .label {
+      color: #6b5e4a;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .value {
+      color: #3d3529;
+      font-size: 16px;
+      margin-top: 5px;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 15px;
+      border-radius: 15px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .status.active {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .status.inactive {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .score {
+      font-size: 36px;
+      font-weight: bold;
+      color: #a6947a;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .error {
+      color: #721c24;
+      background-color: #f8d7da;
+      padding: 12px;
+      border-radius: 5px;
+      margin-top: 15px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .examples {
+      text-align: center;
+      margin-top: 20px;
+      color: #6b5e4a;
+      font-size: 14px;
+    }
+
+    .example-link {
+      color: #a6947a;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .example-link:hover {
+      color: #8f8469;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Kite Agent Checker</h1>
+    <p class="subtitle">Check if an AI agent is verified on Kite Network</p>
+
+    <input 
+      type="text" 
+      id="agentId" 
+      placeholder="Enter Agent ID (e.g., agent123)"
+    />
+    <button onclick="checkAgent()">Check Agent</button>
+
+    <p class="examples">
+      Try: 
+      <span class="example-link" onclick="loadExample('agent123')">agent123</span> or 
+      <span class="example-link" onclick="loadExample('shopbot')">shopbot</span> or 
+      <span class="example-link" onclick="loadExample('tradebot')">tradebot</span>
+    </p>
+
+    <div class="error" id="error">
+      Agent not found. Please check the ID and try again.
+    </div>
+
+    <div class="result" id="result">
+      <h2 id="agentName">-</h2>
+      
+      <div class="info-row">
+        <div class="label">Agent ID</div>
+        <div class="value" id="displayId">-</div>
+      </div>
+
+      <div class="info-row">
+        <div class="label">Status</div>
+        <div class="value">
+          <span class="status active" id="status">Active</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="label">Creator</div>
+        <div class="value" id="creator">-</div>
+      </div>
+
+      <div class="info-row">
+        <div class="label">Purpose</div>
+        <div class="value" id="purpose">-</div>
+      </div>
+
+      <div class="info-row">
+        <div class="label">Trust Score</div>
+        <div class="score" id="score">-</div>
+        <div style="text-align: center; color: #6b5e4a;" id="scoreText">-</div>
+      </div>
+
+      <div class="info-row">
+        <div class="label">Total Transactions</div>
+        <div class="value" id="transactions">-</div>
+      </div>
+
+      <div class="info-row">
+        <div class="label">Spending Limit</div>
+        <div class="value" id="limit">-</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simple agent database
+    const agents = {
+      'agent123': {
+        name: 'Shopping Assistant',
+        creator: 'Alice Tech',
+        purpose: 'E-commerce purchases',
+        status: 'active',
+        score: 95,
+        transactions: 1240,
+        limit: '$500 per day'
+      },
+      'shopbot': {
+        name: 'ShopBot Pro',
+        creator: 'Bob Corp',
+        purpose: 'Automated shopping',
+        status: 'active',
+        score: 88,
+        transactions: 567,
+        limit: '$300 per day'
+      },
+      'tradebot': {
+        name: 'Trading Agent',
+        creator: 'Carol Finance',
+        purpose: 'Crypto trading',
+        status: 'active',
+        score: 92,
+        transactions: 3450,
+        limit: '$5000 per day'
+      }
+    };
+
+    function loadExample(id) {
+      document.getElementById('agentId').value = id;
+      checkAgent();
+    }
+
+    function checkAgent() {
+      const input = document.getElementById('agentId').value.trim().toLowerCase();
+      const error = document.getElementById('error');
+      const result = document.getElementById('result');
+
+      // Hide both initially
+      error.classList.remove('show');
+      result.classList.remove('show');
+
+      if (!input) {
+        error.textContent = 'Please enter an Agent ID';
+        error.classList.add('show');
+        return;
+      }
+
+      const agent = agents[input];
+
+      if (!agent) {
+        error.textContent = 'Agent not found. Try agent123, shopbot, or tradebot';
+        error.classList.add('show');
+        return;
+      }
+
+      // Show results
+      document.getElementById('agentName').textContent = agent.name;
+      document.getElementById('displayId').textContent = input;
+      document.getElementById('creator').textContent = agent.creator;
+      document.getElementById('purpose').textContent = agent.purpose;
+      document.getElementById('score').textContent = agent.score + '/100';
+      document.getElementById('transactions').textContent = agent.transactions.toLocaleString();
+      document.getElementById('limit').textContent = agent.limit;
+
+      // Status
+      const statusEl = document.getElementById('status');
+      statusEl.className = 'status ' + agent.status;
+      statusEl.textContent = agent.status.charAt(0).toUpperCase() + agent.status.slice(1);
+
+      // Score text
+      let scoreText = 'Excellent';
+      if (agent.score < 90) scoreText = 'Very Good';
+      if (agent.score < 75) scoreText = 'Good';
+      if (agent.score < 60) scoreText = 'Fair';
+      document.getElementById('scoreText').textContent = scoreText;
+
+      result.classList.add('show');
+    }
+
+    // Enter key support
+    document.getElementById('agentId').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        checkAgent();
+      }
+    });
+  </script>
+</body>
+</html>
