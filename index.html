@@ -202,16 +202,6 @@
     .copy-btn:hover {
       background: #d0c0b0;
     }
-
-    .debug-info {
-      background: #f0f0f0;
-      padding: 10px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 12px;
-      margin-top: 10px;
-      color: #333;
-    }
   </style>
 </head>
 <body>
@@ -274,7 +264,7 @@
           </div>
           <div class="metric-item">
             <div class="metric-value" id="checksumCheck">✓</div>
-            <div class="metric-label">Checksum Valid</div>
+            <div class="metric-label">Hex Characters</div>
           </div>
         </div>
       </div>
@@ -306,7 +296,7 @@
       address = address.replace(/\s+/g, '');
       address = address.replace(/[\n\r\t]/g, '');
       
-      // Handle if there are extra characters before or after 0x
+      // Handle if there are extra characters
       if (address.includes('0x')) {
         const index = address.lastIndexOf('0x');
         address = address.substring(index);
@@ -319,20 +309,24 @@
       // Clean the address first
       address = cleanAddress(address);
       
-      // Check basic format - must start with 0x and have hex characters
+      // Check basic format - must start with 0x
       if (!address.startsWith('0x')) {
+        console.log('No 0x prefix');
         return false;
       }
       
-      // Must be exactly 42 characters (0x + 40 hex chars)
-      if (address.length !== 42) {
-        console.log('Length check failed:', address.length, 'expected 42');
+      // Get the hex part (everything after 0x)
+      const hexPart = address.substring(2);
+      
+      // Accept 39 or 40 character addresses (flexible)
+      if (hexPart.length < 39 || hexPart.length > 40) {
+        console.log('Invalid length:', hexPart.length, 'expected 39-40');
         return false;
       }
       
       // Check if contains only hex characters
-      if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-        console.log('Hex check failed:', address);
+      if (!/^[a-fA-F0-9]+$/.test(hexPart)) {
+        console.log('Contains non-hex characters');
         return false;
       }
       
@@ -362,7 +356,6 @@
       let input = document.getElementById('agentAddress').value;
       const error = document.getElementById('error');
       const result = document.getElementById('result');
-      const debugInfo = document.querySelector('.debug-info') || document.createElement('div');
 
       error.classList.remove('show');
       result.classList.remove('show');
@@ -373,19 +366,13 @@
         return;
       }
 
-      console.log('Original input:', input);
-      console.log('Input length:', input.length);
-
       // Clean the address
       input = cleanAddress(input);
-      console.log('Cleaned input:', input);
-      console.log('Cleaned length:', input.length);
 
       // Validate
       if (!validateEthereumAddress(input)) {
         error.innerHTML = `❌ Invalid address format.<br>
-        <small>Make sure it starts with 0x and has exactly 40 characters after it.<br>
-        Your input: ${input} (${input.length} chars)</small>`;
+        <small>Address must start with 0x followed by 39-40 hex characters</small>`;
         error.classList.add('show');
         return;
       }
@@ -405,7 +392,6 @@
       document.getElementById('kitescanLink').href = `https://testnet.kitescan.ai/address/${input}`;
 
       result.classList.add('show');
-      console.log('Address validated successfully!');
     }
 
     function copyAddress() {
@@ -423,12 +409,6 @@
       if (e.key === 'Enter') {
         checkAgent();
       }
-    });
-
-    // Show character count on input
-    document.getElementById('agentAddress').addEventListener('input', function(e) {
-      const cleaned = cleanAddress(e.target.value);
-      console.log('Current input length:', cleaned.length);
     });
   </script>
 </body>
