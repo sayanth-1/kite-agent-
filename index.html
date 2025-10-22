@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kite Agent Checker - Simple</title>
+  <title>Kite Agent Checker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -109,11 +109,6 @@
       color: #155724;
     }
 
-    .status.unverified {
-      background-color: #fff3cd;
-      color: #856404;
-    }
-
     .score {
       font-size: 36px;
       font-weight: bold;
@@ -207,6 +202,16 @@
     .copy-btn:hover {
       background: #d0c0b0;
     }
+
+    .debug-info {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 10px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
@@ -221,7 +226,7 @@
     <input 
       type="text" 
       id="agentAddress" 
-      placeholder="Paste contract address (0x...) and click Check Agent"
+      placeholder="Paste contract address here..."
     />
     <button onclick="checkAgent()">Check Agent</button>
 
@@ -295,22 +300,53 @@
   <script>
     let currentAddress = '';
 
+    function cleanAddress(address) {
+      // Remove spaces, tabs, newlines
+      address = address.trim();
+      address = address.replace(/\s+/g, '');
+      address = address.replace(/[\n\r\t]/g, '');
+      
+      // Handle if there are extra characters before or after 0x
+      if (address.includes('0x')) {
+        const index = address.lastIndexOf('0x');
+        address = address.substring(index);
+      }
+      
+      return address;
+    }
+
     function validateEthereumAddress(address) {
-      // Check if it's a valid Ethereum-style address (Kite uses same format)
-      return /^0x[a-fA-F0-9]{40}$/.test(address);
+      // Clean the address first
+      address = cleanAddress(address);
+      
+      // Check basic format - must start with 0x and have hex characters
+      if (!address.startsWith('0x')) {
+        return false;
+      }
+      
+      // Must be exactly 42 characters (0x + 40 hex chars)
+      if (address.length !== 42) {
+        console.log('Length check failed:', address.length, 'expected 42');
+        return false;
+      }
+      
+      // Check if contains only hex characters
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+        console.log('Hex check failed:', address);
+        return false;
+      }
+      
+      return true;
     }
 
     function calculateTrustScore(address) {
-      // Generate a consistent score based on address
-      // This is for demonstration - real trust would come from blockchain data
       let hash = 0;
       for (let i = 0; i < address.length; i++) {
         const char = address.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32-bit integer
+        hash = hash & hash;
       }
       
-      // Normalize to 70-95 range (realistic for validated contracts)
       const score = 70 + Math.abs(hash % 25);
       return score;
     }
@@ -323,22 +359,33 @@
     }
 
     function checkAgent() {
-      const input = document.getElementById('agentAddress').value.trim();
+      let input = document.getElementById('agentAddress').value;
       const error = document.getElementById('error');
       const result = document.getElementById('result');
+      const debugInfo = document.querySelector('.debug-info') || document.createElement('div');
 
       error.classList.remove('show');
       result.classList.remove('show');
 
-      // Validate
       if (!input) {
         error.textContent = '❌ Please enter a contract address';
         error.classList.add('show');
         return;
       }
 
+      console.log('Original input:', input);
+      console.log('Input length:', input.length);
+
+      // Clean the address
+      input = cleanAddress(input);
+      console.log('Cleaned input:', input);
+      console.log('Cleaned length:', input.length);
+
+      // Validate
       if (!validateEthereumAddress(input)) {
-        error.textContent = '❌ Invalid address format. Must be 0x followed by 40 characters';
+        error.innerHTML = `❌ Invalid address format.<br>
+        <small>Make sure it starts with 0x and has exactly 40 characters after it.<br>
+        Your input: ${input} (${input.length} chars)</small>`;
         error.classList.add('show');
         return;
       }
@@ -358,6 +405,7 @@
       document.getElementById('kitescanLink').href = `https://testnet.kitescan.ai/address/${input}`;
 
       result.classList.add('show');
+      console.log('Address validated successfully!');
     }
 
     function copyAddress() {
@@ -375,6 +423,12 @@
       if (e.key === 'Enter') {
         checkAgent();
       }
+    });
+
+    // Show character count on input
+    document.getElementById('agentAddress').addEventListener('input', function(e) {
+      const cleaned = cleanAddress(e.target.value);
+      console.log('Current input length:', cleaned.length);
     });
   </script>
 </body>
